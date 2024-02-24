@@ -14,8 +14,8 @@
   <button onclick="sendFile()">Send File</button>
 
   <script>
-    const id = '123-456-780'
-    const peer = new Peer(id);
+    
+    const peer = new Peer();
 
     peer.on('open', (id) => {
       console.log('My peer ID is: ' + id);
