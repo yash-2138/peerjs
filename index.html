@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PeerJS File Transfer</title>
+  <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+</head>
+<body>
+  <h1>PeerJS File Transfer</h1>
+
+  <input type="file" id="fileInput">
+  <button onclick="sendFile()">Send File</button>
+
+  <script>
+    const id = '123-456-780'
+    const peer = new Peer(id);
+
+    peer.on('open', (id) => {
+      console.log('My peer ID is: ' + id);
+    });
+
+    peer.on('connection', (conn) => {
+      console.log('Connected to peer:', conn.peer);
+
+      conn.on('data', (data) => {
+        console.log('Received data:', data);
+        handleData(data);
+      });
+    });
+
+    function connectToPeer(peerID) {
+      const conn = peer.connect(peerID);
+
+      conn.on('open', () => {
+        console.log('Connected to peer:', peerID);
+      });
+
+      conn.on('data', (data) => {
+        handleData(data);
+      });
+    }
+
+    function sendFile() {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert('Please select a file.');
+        return;
+      }
+
+      const peerID = prompt('Enter peer ID to send the file:');
+
+      if (!peerID) {
+        alert('Peer ID is required.');
+        return;
+      }
+
+      const conn = peer.connect(peerID);
+
+      conn.on('open', () => {
+        console.log('Connected to peer:', peerID);
+
+        const data = {
+          type: 'file',
+          fileName: file.name,
+          fileSize: file.size,
+        };
+
+        conn.send(data);
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          const fileData = {
+            type: 'file',
+            content: event.target.result,
+          };
+          conn.send(fileData);
+        };
+
+        reader.readAsArrayBuffer(file);
+      });
+
+      conn.on('error', (err) => {
+        console.error('Connection error:', err);
+      });
+    }
+
+    function handleData(data) {
+      if (data.type === 'file') {
+        console.log('Received file data:', data);
+
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([data.content]));
+        link.download = data.fileName;
+        link.click();
+      }
+    }
+  </script>
+</body>
+</html>
